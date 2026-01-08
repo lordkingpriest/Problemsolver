@@ -15,7 +15,7 @@ COPY requirements.txt .
 
 # Build wheels
 RUN pip install --upgrade pip \
-    && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+&& pip wheel --no-cache-dir -r requirements.txt -w /wheels
 
 # ---------- Runtime stage ----------
 FROM python:3.11-slim
@@ -30,9 +30,20 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir --find-links=/wheels -r /wheels/requirements.txt \
-    && rm -rf /wheels
+COPY requirements.txt /app/requirements.txt
 
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir \
+       --no-index \
+       --find-links=/wheels \
+       -r /app/requirements.txt
+# Copy application code (excluding files like requirements.txt)
+COPY --chown=appuser:appuser \
+    app/ \
+    static/ \
+    templates/ \
+    alembic.ini \
+    ./
 # Copy application code
 COPY . .
 
