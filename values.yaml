@@ -1,0 +1,33 @@
+# Webhook worker chart values (partial). Merge with existing values.
+replicaCount: 2
+image:
+  repository: your-registry/problemsolver-webhook-worker
+  tag: latest
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "300m"
+    memory: "256Mi"
+
+env:
+  WEBHOOK_METRICS_PORT: "8001"
+  WEBHOOK_MAX_ATTEMPTS: "10"
+  WEBHOOK_BACKOFF_BASE_SECONDS: "1"
+
+secretName: problemsolver-secrets
+service:
+  port: 8001
+
+serviceMonitor:
+  enabled: true
+  namespace: default
+  interval: "15s"
+  scrapeTimeout: "10s"
+  createRBAC: false
+
+networkPolicy:
+  enabled: false

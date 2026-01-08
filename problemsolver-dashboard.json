@@ -1,0 +1,82 @@
+{
+  "uid": "problemsolver-main",
+  "title": "Problemsolver - Poller & Webhooks",
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "row",
+      "title": "Problemsolver Core Metrics",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "type": "graph",
+      "title": "Deposits Processed (rate)",
+      "id": 1,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(problemsolver_deposits_processed_total[5m])",
+          "legendFormat": "processed/sec",
+          "refId": "A"
+        }
+      ],
+      "lines": true
+    },
+    {
+      "type": "graph",
+      "title": "Deposits Errors & Collisions (rate)",
+      "id": 2,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(problemsolver_deposits_errors_total[5m])",
+          "legendFormat": "errors/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(problemsolver_collisions_total[5m])",
+          "legendFormat": "collisions/sec",
+          "refId": "B"
+        }
+      ],
+      "lines": true
+    },
+    {
+      "type": "stat",
+      "title": "Last Poll Success (age)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 9 },
+      "targets": [
+        {
+          "expr": "time() - problemsolver_poller_last_success_unixtime",
+          "refId": "A"
+        }
+      ],
+      "format": "s",
+      "colorMode": "value",
+      "decimals": 0
+    },
+    {
+      "type": "graph",
+      "title": "Webhook success / fail rate",
+      "id": 4,
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 9 },
+      "targets": [
+        {
+          "expr": "rate(problemsolver_webhook_success_total[5m])",
+          "legendFormat": "webhook success/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(problemsolver_webhook_fail_total[5m])",
+          "legendFormat": "webhook fail/sec",
+          "refId": "B"
+        }
+      ],
+      "lines": true
+    }
+  ],
+  "time": { "from": "now-1h", "to": "now" }
+}

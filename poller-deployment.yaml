@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: problemsolver-poller
+  labels:
+    app: problemsolver-poller
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: problemsolver-poller
+  template:
+    metadata:
+      labels:
+        app: problemsolver-poller
+    spec:
+      containers:
+        - name: poller
+          image: your-registry/problemsolver-poller:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: problemsolver-secrets
+                  key: database_url
+            - name: BINANCE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: problemsolver-secrets
+                  key: binance_api_key
+            - name: BINANCE_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: problemsolver-secrets
+                  key: binance_api_secret
+            - name: POLLER_POLL_INTERVAL_SECONDS
+              value: "20"
+            - name: POLLER_METRICS_PORT
+              value: "8002"
+            - name: AMOUNT_DIFF_K
+              value: "3"
+          ports:
+            - name: metrics
+              containerPort: 8002
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -m
+                - app.bin.healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: problemsolver-poller-metrics
+  labels:
+    app: problemsolver-poller
+spec:
+  selector:
+    app: problemsolver-poller
+  ports:
+    - name: metrics
+      port: 8002
+      targetPort: 8002
+  type: ClusterIP

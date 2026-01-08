@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "problemsolver-poller.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "problemsolver-poller.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "problemsolver-poller.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "problemsolver-poller.name" . }}
+    spec:
+      containers:
+      - name: poller
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: metrics
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretName }}
+              key: database_url
+        - name: BINANCE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretName }}
+              key: binance_api_key
+        - name: BINANCE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretName }}
+              key: binance_api_secret
+        - name: POLLER_POLL_INTERVAL_SECONDS
+          value: "{{ .Values.env.POLLER_POLL_INTERVAL_SECONDS }}"
+        - name: POLLER_METRICS_PORT
+          value: "{{ .Values.env.POLLER_METRICS_PORT }}"
+        - name: AMOUNT_DIFF_K
+          value: "{{ .Values.env.AMOUNT_DIFF_K }}"
+        resources:
+          requests:
+            cpu: "{{ .Values.resources.requests.cpu }}"
+            memory: "{{ .Values.resources.requests.memory }}"
+          limits:
+            cpu: "{{ .Values.resources.limits.cpu }}"
+            memory: "{{ .Values.resources.limits.memory }}"
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command: ["python", "-m", "app.bin.healthcheck"]
+          initialDelaySeconds: 10
+          periodSeconds: 15

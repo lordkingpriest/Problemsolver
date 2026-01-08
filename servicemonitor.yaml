@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "problemsolver-poller.fullname" . }}-sm
+  namespace: {{ .Values.serviceMonitor.namespace | default "default" }}
+  labels:
+    release: prometheus
+    app.kubernetes.io/managed-by: helm
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "problemsolver-poller.name" . | default "problemsolver-poller" }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.serviceMonitor.namespace | default "default" }}
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.serviceMonitor.interval | default "15s" }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout | default "10s" }}
+      path: /metrics

@@ -1,16 +1,17 @@
-# Multi-stage build
+# Poller service Dockerfile (multi-stage)
 FROM python:3.11-slim AS base
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# Install system deps
-RUN apt-get update && apt-get install -y build-essential libpq-dev
+# System deps
+RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml poetry.lock* /app/
-# Install dependencies (poetry or pip as per preference)
+# Copy files
+COPY pyproject.toml requirements.txt /app/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 COPY . /app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Poller runs as: python -m app.poller.main
+CMD ["python", "-m", "app.poller.main"]

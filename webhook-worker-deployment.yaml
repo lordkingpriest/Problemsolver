@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: problemsolver-webhook-worker
+  labels:
+    app: problemsolver-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: problemsolver-webhook
+  template:
+    metadata:
+      labels:
+        app: problemsolver-webhook
+    spec:
+      containers:
+        - name: webhook-worker
+          image: your-registry/problemsolver-webhook-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: problemsolver-secrets
+                  key: database_url
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: problemsolver-secrets
+                  key: webhook_secret
+            - name: WEBHOOK_METRICS_PORT
+              value: "8001"
+            - name: WEBHOOK_MAX_ATTEMPTS
+              value: "10"
+            - name: WEBHOOK_BACKOFF_BASE_SECONDS
+              value: "1"
+          ports:
+            - name: metrics
+              containerPort: 8001
+          resources:
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -m
+                - app.bin.healthcheck
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: problemsolver-webhook-metrics
+  labels:
+    app: problemsolver-webhook
+spec:
+  selector:
+    app: problemsolver-webhook
+  ports:
+    - name: metrics
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP
