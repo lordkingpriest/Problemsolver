@@ -15,7 +15,7 @@ COPY requirements.txt .
 
 # Build wheels
 RUN pip install --upgrade pip \
-&& pip wheel --no-cache-dir -r requirements.txt -w /wheels
+    && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
 
 # ---------- Runtime stage ----------
 FROM python:3.11-slim
