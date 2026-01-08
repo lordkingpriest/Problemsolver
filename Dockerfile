@@ -15,7 +15,7 @@ COPY requirements.txt .
 
 # Build wheels
 RUN pip install --upgrade pip \
-    && pip wheel --no-cache-dir --no-deps -r requirements.txt -w /wheels
+    && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
 
 # ---------- Runtime stage ----------
 FROM python:3.11-slim
@@ -30,12 +30,15 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
-COPY requirements.txt .
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir --find-links=/wheels -r requirements.txt
+RUN pip install --no-cache-dir --find-links=/wheels -r /wheels/requirements.txt \
+    && rm -rf /wheels
 
-# Copy application code (excluding files like requirements.txt)
+# Copy application code
 COPY . .
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
 
 # Run FastAPI
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
